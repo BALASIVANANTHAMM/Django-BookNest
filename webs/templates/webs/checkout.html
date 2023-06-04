@@ -1,0 +1,100 @@
+{% extends 'webs/layouts/main.html' %}
+{% load static %}
+{% block title %}
+  CheckOut | Book Nest
+{% endblock title %}
+{% block content %}
+<div class="container">
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{msg}}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="row mt-5">
+        <div class="col-sm-6">
+            <h4>Order Summary</h4>
+            <hr>
+            {% for item in cart_items %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h5>Product: {{item.product}}</h5>
+                        <p>Quantity: {{item.product_qty}}</p>
+                        <p class="fw-bold">Price: {{item.product.selling_price}}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            <p class="fw-bold">Total Cost + Rs. 40 = {{totalamount}}</p>
+            <small>Terms and Condition: These are legal agreements between an online store or website and its customers that define the terms and conditions for using the website, purchasing products, and accessing services. These agreements are critical for protecting the business and ensuring a fair and safe online shopping experience for customers. Some of the key elements that may be included in ecommerce terms and conditions are This section outlines the rules and regulations for using the website, including prohibited activities, intellectual property rights, and disclaimers of liability.</small>
+        </div>
+        <div class="col-sm-4 offset-sm-1">
+            <h4>Select Address</h4>
+            <hr>
+            <form method="post" id="myform">
+                {% csrf_token %}
+                {% for ad in add %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>{{ad.name}}</h5>
+                            <p>Mobile : {{ad.mobile}}</p>
+                            <p>{{ad.locality}} {{ad.city}} {{ad.state}} - {{ad.zipcode}}</p>
+                        </div>
+                    </div>
+                        <div class="form-check mt-2 mb-5">
+                            <input class="form-check-input" type="radio" name="custid" id="custadd{{forloop.counter}}" value="{{ad.id}}">
+                            <label class="form-check-label fw-bold" for="custadd{{forloop.counter}}">
+                                Address:{{forloop.counter}}
+                            </label>
+                        </div>
+                {% endfor %}
+                    <div class="form-heck mb-3">
+                        <label for="totamount" class="form-label">Total Amount</label>
+                        <input type="number" class="form-control" id="totamount" value={{totalamount}} readonly>
+                    </div>
+                    <div class="text-end">
+    <!--                    <button type="submit" class="btn btn-warning mt-3 px-5 fw-bold">Payment</button>-->
+                        <button id="rzp-button1" type="submit" class="btn btn-warning mt-3 px-5 fw-bold">Payment</button>
+                    </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block payment-gateway %}
+<script>
+    var options = {
+    "key": "rzp_test_j4KJZHBzB6k7UN", // Enter the Key ID generated from the Dashboard
+    "amount": "{{razoramount}}", // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+    "currency": "INR",
+    "name": "Book Nest",
+    "description": "Purchase Books",
+    "order_id": "{{order_id}}", //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+    "handler": function (response){
+        console.log("success")
+            var form = document.getElementById("myform");
+            //alert(form.elements ["custid"].value);
+            //alert (response.razorpay_payment_id);
+            //alert (response.razorpay_order_id);
+            //alert(response.razorpay_signature)
+            window.location.href = `http://localhost:8000/paymentdone?order_id=${response.razorpay_order_id}&payment_id=${response.razorpay_payment_id}&cust_id=${form.elements["custid"].value}`
+    },
+    "theme": {
+        "color": "#3399cc"
+    }
+};
+var rzp1 = new Razorpay(options);
+rzp1.on('payment.failed', function (response){
+
+        alert(response.error.description);
+
+});
+document.getElementById('rzp-button1').onclick = function(e){
+    console.log("button click");
+    rzp1.open();
+    e.preventDefault();
+}
+</script>
+
+{% endblock payment-gateway %}
